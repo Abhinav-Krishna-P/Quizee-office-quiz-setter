@@ -1,0 +1,17 @@
+{
+  "name": "fifa-quizee-root",
+  "version": "1.0.0",
+  "description": "FIFA 2026 Quizee Kahoot Replica Root",
+  "scripts": {
+    "install-all": "npm install && npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client && npm run build --prefix server",
+    "start": "npm run start --prefix server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.3"
+  }
+}
