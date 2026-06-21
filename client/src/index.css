@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+  
+  --animate-shimmer: shimmer 3s linear infinite;
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+}
+
+/* Custom premium styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: #0f0c1b;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225,39%,10%,1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(339,49%,12%,1) 0, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(250,50%,8%,1) 0, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(276,43%,9%,1) 0, transparent 50%);
+  color: #f1f5f9;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-hover:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transform: translateY(-2px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 12, 27, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Kahoot-style buttons and icons */
+.btn-red {
+  background: linear-gradient(135deg, #e11d48, #be123c);
+  box-shadow: 0 4px 0 #9f1239, 0 10px 15px -3px rgba(225, 29, 72, 0.3);
+}
+.btn-red:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #9f1239, 0 5px 10px -3px rgba(225, 29, 72, 0.3);
+}
+
+.btn-blue {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 4px 0 #1e40af, 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+}
+.btn-blue:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #1e40af, 0 5px 10px -3px rgba(37, 99, 235, 0.3);
+}
+
+.btn-yellow {
+  background: linear-gradient(135deg, #eab308, #ca8a04);
+  box-shadow: 0 4px 0 #a16207, 0 10px 15px -3px rgba(234, 179, 8, 0.3);
+}
+.btn-yellow:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #a16207, 0 5px 10px -3px rgba(234, 179, 8, 0.3);
+}
+
+.btn-green {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 0 #047857, 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+}
+.btn-green:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #047857, 0 5px 10px -3px rgba(16, 185, 129, 0.3);
+}
