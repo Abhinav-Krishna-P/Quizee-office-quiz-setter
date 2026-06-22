@@ -18,6 +18,7 @@ export default function HostLobby() {
   const [qrUrl, setQrUrl] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [error, setError] = useState('');
+  const [showAbortModal, setShowAbortModal] = useState(false);
 
   // 1. Fetch current quiz title
   useEffect(() => {
@@ -114,6 +115,25 @@ export default function HostLobby() {
     }
   };
 
+  const handleAbortQuiz = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/sessions/${upperCode}/abort`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to abort quiz');
+      }
+
+      setShowAbortModal(false);
+      navigate('/admin/quizzes');
+    } catch (err) {
+      console.error(err);
+      setError('Failed to abort quiz session.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center">
@@ -127,12 +147,21 @@ export default function HostLobby() {
     <div className="flex-1 p-6 md:p-12 max-w-6xl mx-auto w-full flex flex-col justify-between">
       {/* Top Header Controls */}
       <div className="flex justify-between items-center mb-8 shrink-0">
-        <button 
-          onClick={() => navigate('/admin/quizzes')}
-          className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors cursor-pointer font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" /> Exit Lobby
-        </button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/admin/quizzes')}
+            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors cursor-pointer font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" /> Exit Lobby
+          </button>
+          <button 
+            type="button"
+            onClick={() => setShowAbortModal(true)}
+            className="text-xs font-bold uppercase tracking-wider bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-400 px-3 py-1.5 rounded-lg cursor-pointer transition-all font-semibold"
+          >
+            Abort Quiz
+          </button>
+        </div>
 
         <button
           onClick={() => setSoundEnabled(!soundEnabled)}
@@ -233,6 +262,34 @@ export default function HostLobby() {
           <Play className="w-5 h-5 fill-current" /> Start Quiz Game
         </button>
       </div>
+
+      {/* Abort Confirmation Modal */}
+      {showAbortModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200 text-left">
+            <h3 className="text-xl font-display font-bold text-white mb-2">Abort Quiz?</h3>
+            <p className="text-slate-400 text-sm mb-6">
+              Are you sure you want to abort this quiz? This will instantly disconnect all participants and end the session.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAbortModal(false)}
+                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-semibold text-sm cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAbortQuiz}
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm cursor-pointer transition-colors shadow-lg shadow-rose-600/20"
+              >
+                Yes, Abort Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

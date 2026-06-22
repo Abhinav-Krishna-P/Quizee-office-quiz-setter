@@ -37,6 +37,7 @@ export default function HostLiveControl() {
 
   // Sound Config
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showAbortModal, setShowAbortModal] = useState(false);
 
   // Connect Socket
   useEffect(() => {
@@ -214,6 +215,22 @@ export default function HostLiveControl() {
     }
   };
 
+  const handleAbortQuiz = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/sessions/${upperCode}/abort`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        throw new Error('Failed to abort quiz');
+      }
+      setShowAbortModal(false);
+      navigate('/admin/quizzes');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Kahoot details
   const colors = ['bg-rose-600', 'bg-blue-600', 'bg-yellow-500', 'bg-emerald-600'];
   const shapes = ['▲', '◆', '●', '■'];
@@ -228,6 +245,16 @@ export default function HostLiveControl() {
         </div>
 
         <div className="flex items-center gap-3">
+          {gameState !== 'ended' && (
+            <button 
+              type="button"
+              onClick={() => setShowAbortModal(true)}
+              className="bg-rose-600/10 hover:bg-rose-600/25 border border-rose-500/20 hover:border-rose-500/40 text-rose-400 font-bold py-2.5 px-4 rounded-lg shadow-lg active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider font-semibold font-display"
+            >
+              Abort Quiz
+            </button>
+          )}
+
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className="p-2.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
@@ -235,12 +262,21 @@ export default function HostLiveControl() {
             {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
           </button>
           
-          <button
-            onClick={handleAdvance}
-            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold py-2.5 px-6 rounded-lg shadow-lg active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer text-sm"
-          >
-            Next <ArrowRight className="w-4 h-4" />
-          </button>
+          {gameState === 'ended' ? (
+            <button
+              onClick={() => navigate('/admin/quizzes')}
+              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold py-2.5 px-6 rounded-lg shadow-lg active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer text-sm font-semibold"
+            >
+              Exit to Dashboard
+            </button>
+          ) : (
+            <button
+              onClick={handleAdvance}
+              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold py-2.5 px-6 rounded-lg shadow-lg active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer text-sm"
+            >
+              Next <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -447,6 +483,34 @@ export default function HostLiveControl() {
       <div className="text-center text-xs text-slate-500 shrink-0 uppercase tracking-widest">
         {gameState === 'ended' ? 'Trivia Showdown Completed' : `Question ${currentQIndex + 1} of ${totalQuestions}`}
       </div>
+
+      {/* Abort Confirmation Modal */}
+      {showAbortModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200 text-left">
+            <h3 className="text-xl font-display font-bold text-white mb-2">Abort Quiz?</h3>
+            <p className="text-slate-400 text-sm mb-6">
+              Are you sure you want to abort this quiz? This will instantly disconnect all participants and end the session.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAbortModal(false)}
+                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-semibold text-sm cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAbortQuiz}
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm cursor-pointer transition-colors shadow-lg shadow-rose-600/20"
+              >
+                Yes, Abort Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

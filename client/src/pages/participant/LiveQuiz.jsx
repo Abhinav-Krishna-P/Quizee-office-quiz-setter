@@ -137,6 +137,11 @@ export default function LiveQuiz() {
       navigate('/podium');
     });
 
+    // 6. Aborted Screen
+    socket.on('quiz-aborted', (data) => {
+      navigate('/join', { state: { message: data.message || 'Quiz ended by the admin' } });
+    });
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       socket.off('reconnect-state');
@@ -144,6 +149,7 @@ export default function LiveQuiz() {
       socket.off('question-reveal');
       socket.off('leaderboard-update');
       socket.off('quiz-ended');
+      socket.off('quiz-aborted');
       socket.disconnect();
     };
   }, [partyCode, participantId, navigate]);

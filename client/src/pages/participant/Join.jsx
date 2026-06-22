@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { SpotlightCard } from '../../components/animations.jsx';
 import { API_BASE_URL } from '../../config.js';
 import { AlertCircle, User, ArrowLeft, Loader2 } from 'lucide-react';
@@ -7,6 +7,7 @@ import { AlertCircle, User, ArrowLeft, Loader2 } from 'lucide-react';
 export default function Join() {
   const { code } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [partyCode, setPartyCode] = useState(code ? code.toUpperCase() : '');
   const [nickname, setNickname] = useState('');
@@ -19,6 +20,15 @@ export default function Join() {
   const [checkingSession, setCheckingSession] = useState(false);
   const [error, setError] = useState('');
   const [joining, setJoining] = useState(false);
+
+  // Check for redirected messages from aborted quizzes
+  useEffect(() => {
+    if (location.state?.message) {
+      setError(location.state.message);
+      // Clear location state from history
+      window.history.replaceState(null, '');
+    }
+  }, [location]);
 
   const colorsList = [
     '#3B82F6', // Blue

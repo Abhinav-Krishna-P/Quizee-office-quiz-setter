@@ -41,6 +41,11 @@ export default function Lobby() {
       navigate('/play');
     });
 
+    // Listen for quiz-aborted event
+    socket.on('quiz-aborted', (data) => {
+      navigate('/join', { state: { message: data.message || 'Quiz ended by the admin' } });
+    });
+
     // Replay state checks (in case game was already started when joining)
     socket.on('reconnect-state', (data) => {
       if (data.state !== 'lobby') {
@@ -55,6 +60,7 @@ export default function Lobby() {
     return () => {
       socket.off('lobby-update');
       socket.off('quiz-started');
+      socket.off('quiz-aborted');
       socket.off('reconnect-state');
       socket.off('error');
       socket.disconnect();

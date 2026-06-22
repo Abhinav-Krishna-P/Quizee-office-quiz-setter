@@ -234,6 +234,60 @@ router.post('/:partyCode/start', requireAdmin, async (req, res) => {
   }
 });
 
+// POST /api/sessions/:partyCode/abort - Host aborts the quiz
+router.post('/:partyCode/abort', requireAdmin, async (req, res) => {
+  const { partyCode } = req.params;
+  const adminId = req.admin.adminId;
+  const upperCode = partyCode.toUpperCase();
+
+  try {
+    // 1. Verify ownership
+    const sessionRes = await query(
+      `SELECT s.id, s.quiz_id 
+       FROM sessions s 
+       JOIN quizzes q ON s.quiz_id = q.id 
+       WHERE s.party_code = $1 AND q.admin_id = $2`,
+      [upperCode, adminId]
+    );
+
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Session not found or unauthorized' });
+    }
+
+    const session = sessionRes.rows[0];
+
+    // 2. Update session status to ended
+    await query(
+      "UPDATE sessions SET status = 'ended' WHERE id = $1",
+      [session.id]
+    );
+    
+    await query(
+      "UPDATE quizzes SET status = 'ended' WHERE id = $1",
+      [session.quiz_id]
+    );
+
+    // 3. Clear in-memory session store
+    const store = getSession(upperCode);
+    if (store) {
+      store.state = 'ended';
+    }
+
+    // 4. Broadcast 'quiz-aborted' event to the room via socket
+    const io = req.app.get('io');
+    if (io) {
+      io.to(upperCode).emit('quiz-aborted', {
+        message: 'Quiz ended by the admin'
+      });
+    }
+
+    res.json({ message: 'Quiz aborted successfully' });
+  } catch (error) {
+    console.error('Abort quiz error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/sessions/:partyCode/next - Admin controls game flow: advances states
 router.post('/:partyCode/next', requireAdmin, async (req, res) => {
   const { partyCode } = req.params;
