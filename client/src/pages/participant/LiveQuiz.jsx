@@ -39,6 +39,7 @@ export default function LiveQuiz() {
 
   // Timer sync
   const [timeLeft, setTimeLeft] = useState(0);
+  const [timeLimit, setTimeLimit] = useState(20);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function LiveQuiz() {
           setQuestionText(data.text);
           setOptions(data.options);
           setSelectedIdx(-1);
+          setTimeLimit(data.timeLimit || 20);
           syncTimer(data.questionStartedAt, data.timeLimit);
         }
       } else if (data.state === 'reveal') {
@@ -99,6 +101,7 @@ export default function LiveQuiz() {
       setSelectedIdx(-1);
       setError('');
       setCorrectIdx(-1);
+      setTimeLimit(data.timeLimit || 20);
 
       syncTimer(data.questionStartedAt, data.timeLimit);
     });
