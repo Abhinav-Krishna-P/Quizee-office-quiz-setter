@@ -35,6 +35,34 @@ router.get('/:partyCode/teams', async (req, res) => {
   }
 });
 
+// GET /api/sessions/:partyCode/participants - Get all participants in a session
+router.get('/:partyCode/participants', async (req, res) => {
+  const { partyCode } = req.params;
+  const upperCode = partyCode.toUpperCase();
+
+  try {
+    const sessionRes = await query('SELECT id FROM sessions WHERE party_code = $1', [upperCode]);
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    const sessionId = sessionRes.rows[0].id;
+    const participantsRes = await query(
+      `SELECT p.id, p.nickname, p.avatar_color, t.name as team_name, t.color as team_color 
+       FROM participants p 
+       LEFT JOIN teams t ON p.team_id = t.id 
+       WHERE p.session_id = $1 
+       ORDER BY p.joined_at ASC`,
+      [sessionId]
+    );
+
+    res.json({ participants: participantsRes.rows });
+  } catch (error) {
+    console.error('Fetch participants error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/sessions/:partyCode/join - Participant joins a session
 router.post('/:partyCode/join', async (req, res) => {
   const { partyCode } = req.params;

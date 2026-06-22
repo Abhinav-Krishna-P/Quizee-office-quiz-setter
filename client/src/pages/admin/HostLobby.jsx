@@ -42,7 +42,20 @@ export default function HostLobby() {
       }
     };
 
+    const fetchParticipants = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/sessions/${upperCode}/participants`);
+        if (res.ok) {
+          const data = await res.json();
+          setParticipants(data.participants || []);
+        }
+      } catch (err) {
+        console.error('Fetch participants error:', err);
+      }
+    };
+
     fetchQuizByCode();
+    fetchParticipants();
 
     // 2. Generate QR Code
     const joinUrl = `${window.location.origin}/join/${upperCode}`;
