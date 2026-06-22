@@ -127,7 +127,7 @@ export default function HostLiveControl() {
 
       if (remainingSec <= 0) {
         clearInterval(timerRef.current);
-        // Force reveal if server hasn't already sent it
+        handleAdvance();
       } else if (remainingSec <= 5 && soundEnabled) {
         // Play final 5 seconds count-down tick
         playTickSound(400);

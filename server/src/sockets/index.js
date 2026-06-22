@@ -89,7 +89,8 @@ export default function registerSocketHandlers(io) {
                 timeLimit: question.time_limit || 20,
                 questionStartedAt: store.questionStartedAt,
                 totalQuestions: questionsRes.rows.length,
-                hasSubmitted: store.answersSubmitted[participantId] !== undefined
+                hasSubmitted: store.answersSubmitted[participantId] !== undefined,
+                submittedOptionIndex: store.answersSubmitted[participantId]?.optionIndex !== undefined ? store.answersSubmitted[participantId].optionIndex : -1
               });
             }
           } else if (store.state === 'reveal') {

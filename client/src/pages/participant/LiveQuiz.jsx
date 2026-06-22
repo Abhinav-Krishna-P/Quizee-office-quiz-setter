@@ -41,6 +41,8 @@ export default function LiveQuiz() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [timeLimit, setTimeLimit] = useState(20);
   const timerRef = useRef(null);
+  const selectedIdxRef = useRef(-1);
+  const questionIdRef = useRef(null);
 
   useEffect(() => {
     if (!partyCode || !participantId) {
@@ -64,14 +66,20 @@ export default function LiveQuiz() {
       setCurrentQIdx(data.questionIndex || 0);
 
       if (data.state === 'question') {
+        setQuestionId(data.questionId);
+        questionIdRef.current = data.questionId;
+        setQuestionText(data.text);
+        setOptions(data.options || []);
+
         if (data.hasSubmitted) {
           setGameState('locked');
+          const subOpt = data.submittedOptionIndex !== undefined ? data.submittedOptionIndex : -1;
+          setSelectedIdx(subOpt);
+          selectedIdxRef.current = subOpt;
         } else {
           setGameState('question');
-          setQuestionId(data.questionId);
-          setQuestionText(data.text);
-          setOptions(data.options);
           setSelectedIdx(-1);
+          selectedIdxRef.current = -1;
           setTimeLimit(data.timeLimit || 20);
           syncTimer(data.questionStartedAt, data.timeLimit);
         }
@@ -94,11 +102,13 @@ export default function LiveQuiz() {
     socket.on('question-start', (data) => {
       setGameState('question');
       setQuestionId(data.questionId);
+      questionIdRef.current = data.questionId;
       setQuestionText(data.text);
       setOptions(data.options);
       setCurrentQIdx(data.questionIndex);
       setTotalQuestions(data.totalQuestions);
       setSelectedIdx(-1);
+      selectedIdxRef.current = -1;
       setError('');
       setCorrectIdx(-1);
       setTimeLimit(data.timeLimit || 20);
@@ -170,12 +180,12 @@ export default function LiveQuiz() {
           setRank(index + 1);
 
           // Get answer details from DB for this question
-          if (revealedCorrectIdx !== -1 && questionId) {
+          if (revealedCorrectIdx !== -1 && questionIdRef.current) {
             const answersRes = await fetch(`${API_BASE_URL}/sessions/${partyCode}/results`); // we can query answers or calculate from score diff
             // For simplicity, let's fetch points earned from our DB answers logs
             // But we can check if the player chose correctIdx by comparing selectedIdx
             // Wait, we can fetch all results and since we have selectedIdx:
-            const correct = selectedIdx === revealedCorrectIdx;
+            const correct = selectedIdxRef.current === revealedCorrectIdx;
             setIsCorrect(correct);
             
             // To get points earned, we can count the difference or just calculate based on correctness
@@ -194,6 +204,7 @@ export default function LiveQuiz() {
     if (gameState !== 'question' || selectedIdx !== -1 || submitting) return;
     
     setSelectedIdx(idx);
+    selectedIdxRef.current = idx;
     setSubmitting(true);
     setGameState('locked');
     setError('');
@@ -218,6 +229,7 @@ export default function LiveQuiz() {
       // rollback state
       setGameState('question');
       setSelectedIdx(-1);
+      selectedIdxRef.current = -1;
     } finally {
       setSubmitting(false);
     }
@@ -305,9 +317,9 @@ export default function LiveQuiz() {
             </div>
             <h3 className="text-2xl font-display font-bold text-emerald-400">Answer Locked!</h3>
             <p className="text-slate-400 text-sm mt-1">Check the presenter screen for live counts. Waiting for others...</p>
-            {selectedIdx !== -1 && (
+            {selectedIdx !== -1 && options[selectedIdx] && (
               <span className="inline-block mt-4 text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/5 px-3 py-1.5 rounded-full text-slate-300">
-                You chose: {shapes[selectedIdx]} Option
+                You chose: {shapes[selectedIdx]} {options[selectedIdx]}
               </span>
             )}
           </SpotlightCard>
