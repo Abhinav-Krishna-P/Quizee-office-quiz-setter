@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: officequiz-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: change_me_to_a_strong_password
+      POSTGRES_DB: officequiz
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Exposes database only to the server container. 
+    # Uncomment ports below only if you need local external GUI access (e.g. pgAdmin)
+    # ports:
+    #   - "127.0.0.1:5432:5432"
+
+  # Backend Server Service
+  server:
+    build: ./server
+    container_name: officequiz-server
+    restart: always
+    depends_on:
+      - db
+    environment:
+      # We reference the database service 'db' in the connection URL
+      DATABASE_URL: postgresql://postgres:change_me_to_a_strong_password@db:5432/officequiz
+      JWT_SECRET: change_me_to_a_long_random_string_for_security
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      PORT: 4000
+
+  # Frontend Nginx Proxy Service
+  client:
+    build:
+      context: ./client
+    container_name: officequiz-client
+    restart: always
+    depends_on:
+      - server
+    ports:
+      # Expose Nginx proxy to HTTP port 80
+      - "80:80"
+
+volumes:
+  pgdata:
+    driver: local
