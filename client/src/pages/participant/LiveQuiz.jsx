@@ -35,6 +35,7 @@ export default function LiveQuiz() {
   const [totalScore, setTotalScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [rank, setRank] = useState(0);
+  const [totalTimeMs, setTotalTimeMs] = useState(0);
   const [correctIdx, setCorrectIdx] = useState(-1);
 
   // Timer sync
@@ -184,6 +185,7 @@ export default function LiveQuiz() {
           const self = data.participants[index];
           setTotalScore(self.total_score);
           setRank(index + 1);
+          setTotalTimeMs(self.total_time_ms || 0);
 
           // Get answer details from DB for this question
           if (revealedCorrectIdx !== -1 && questionIdRef.current) {
@@ -250,16 +252,22 @@ export default function LiveQuiz() {
     <div className="flex-1 flex flex-col justify-between p-4 max-w-lg mx-auto w-full select-none">
       
       {/* Top Header stats */}
-      <div className="flex justify-between items-center bg-white/5 border border-white/5 p-3 rounded-xl shrink-0">
+      <div className="grid grid-cols-3 gap-2 bg-white/5 border border-white/5 p-3 rounded-xl shrink-0">
         <div>
           <span className="text-[10px] text-slate-400 uppercase tracking-widest block">Score</span>
-          <span className="font-mono font-black text-violet-400 text-lg">
+          <span className="font-mono font-black text-violet-400 text-base md:text-lg">
             <CountUp to={totalScore} /> pts
           </span>
         </div>
-        <div>
-          <span className="text-[10px] text-slate-400 uppercase tracking-widest block text-right">Rank</span>
-          <span className="font-display font-black text-white text-lg">
+        <div className="text-center">
+          <span className="text-[10px] text-slate-400 uppercase tracking-widest block">Correct Time</span>
+          <span className="font-mono font-black text-emerald-400 text-base md:text-lg">
+            {totalTimeMs ? `${(totalTimeMs / 1000).toFixed(2)}s` : '-'}
+          </span>
+        </div>
+        <div className="text-right">
+          <span className="text-[10px] text-slate-400 uppercase tracking-widest block">Rank</span>
+          <span className="font-display font-black text-white text-base md:text-lg">
             #{rank || '-'}
           </span>
         </div>

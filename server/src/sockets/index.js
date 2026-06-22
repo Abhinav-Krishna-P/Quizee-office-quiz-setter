@@ -1,6 +1,8 @@
 import { getSession, createSessionStore } from './sessionStore.js';
 import { query } from '../db/index.js';
 
+const disconnectTimeouts = {};
+
 export default function registerSocketHandlers(io) {
   io.on('connection', (socket) => {
     console.log('Socket connected:', socket.id);
@@ -26,7 +28,13 @@ export default function registerSocketHandlers(io) {
       }
 
       if (!isHost && participantId) {
-        store.connectedParticipantIds.add(parseInt(participantId, 10));
+        const pId = parseInt(participantId, 10);
+        if (disconnectTimeouts[pId]) {
+          clearTimeout(disconnectTimeouts[pId]);
+          delete disconnectTimeouts[pId];
+          console.log(`Participant ${pId} reconnected within 3s. Cancelled deletion.`);
+        }
+        store.connectedParticipantIds.add(pId);
 
         // Sync player status by checking DB
         try {
@@ -134,33 +142,49 @@ export default function registerSocketHandlers(io) {
       console.log('Socket disconnected:', socket.id);
       const { partyCode, participantId, isHost } = socket;
 
-      if (partyCode) {
-        const store = getSession(partyCode);
-        if (store && participantId) {
-          store.connectedParticipantIds.delete(parseInt(participantId, 10));
-
-          // Broadcast participant-disconnected update to lobby or active game
+      if (!isHost && partyCode && participantId) {
+        const pId = parseInt(participantId, 10);
+        
+        // Wait 3 seconds to see if they reconnect (e.g. page refresh)
+        disconnectTimeouts[pId] = setTimeout(async () => {
+          console.log(`Participant ${pId} did not reconnect within 3s. Deleting from DB.`);
           try {
-            const sessionRes = await query('SELECT id FROM sessions WHERE party_code = $1', [partyCode]);
-            if (sessionRes.rows.length > 0) {
-              const sessionId = sessionRes.rows[0].id;
+            // Delete participant from DB
+            const deleteRes = await query(
+              'DELETE FROM participants WHERE id = $1 RETURNING session_id',
+              [pId]
+            );
+
+            const store = getSession(partyCode);
+            if (store) {
+              store.connectedParticipantIds.delete(pId);
+              delete store.answersSubmitted[pId];
+            }
+
+            if (deleteRes.rowCount > 0) {
+              const sessionId = deleteRes.rows[0].session_id;
+              
+              // Broadcast updated participant list
               const participantsRes = await query(
                 `SELECT p.id, p.nickname, p.avatar_color, t.name as team_name, t.color as team_color 
                  FROM participants p 
                  LEFT JOIN teams t ON p.team_id = t.id 
-                 WHERE p.session_id = $1
+                 WHERE p.session_id = $1 
                  ORDER BY p.joined_at ASC`,
                 [sessionId]
               );
+
               io.to(partyCode).emit('lobby-update', {
                 participants: participantsRes.rows,
                 participantCount: participantsRes.rows.length
               });
             }
           } catch (err) {
-            console.error('Error handling socket disconnect logic:', err);
+            console.error('Error handling delayed disconnect cleanup:', err);
+          } finally {
+            delete disconnectTimeouts[pId];
           }
-        }
+        }, 3000);
       }
     });
   });

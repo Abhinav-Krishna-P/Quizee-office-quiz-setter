@@ -417,9 +417,19 @@ export default function HostLiveControl() {
                       </div>
                     </div>
 
-                    <span className="font-mono font-black text-violet-400 text-lg">
-                      <CountUp to={player.total_score} /> pts
-                    </span>
+                    <div className="flex items-center gap-2 font-mono font-black shrink-0">
+                      <span className="text-violet-400 text-base md:text-lg">
+                        <CountUp to={player.total_score} /> pts
+                      </span>
+                      {player.total_time_ms ? (
+                        <>
+                          <span className="text-white/20 text-xs md:text-sm">•</span>
+                          <span className="text-emerald-400 text-sm md:text-base">
+                            {(player.total_time_ms / 1000).toFixed(2)}s
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -441,7 +451,15 @@ export default function HostLiveControl() {
                 <div className="flex flex-col items-center w-28 md:w-36">
                   <div className="text-center mb-2">
                     <p className="font-black font-display text-sm truncate w-24 md:w-32">{podium[1].nickname}</p>
-                    <p className="text-xs text-violet-300 font-bold">{podium[1].total_score} pts</p>
+                    <p className="text-xs font-mono font-bold">
+                      <span className="text-violet-300">{podium[1].total_score} pts</span>
+                      {podium[1].total_time_ms ? (
+                        <>
+                          <span className="text-white/15 mx-1">•</span>
+                          <span className="text-emerald-400">{(podium[1].total_time_ms / 1000).toFixed(2)}s</span>
+                        </>
+                      ) : null}
+                    </p>
                   </div>
                   <div className="w-full bg-slate-300/20 border-t-4 border-slate-300 rounded-t-lg h-36 flex flex-col items-center justify-center shadow-lg">
                     <span className="text-4xl font-display font-black text-slate-300">2</span>
@@ -454,7 +472,15 @@ export default function HostLiveControl() {
                 <div className="flex flex-col items-center w-28 md:w-36">
                   <div className="text-center mb-2">
                     <p className="font-black font-display text-base truncate w-24 md:w-32 text-yellow-400">{podium[0].nickname}</p>
-                    <p className="text-xs text-yellow-500 font-bold">{podium[0].total_score} pts</p>
+                    <p className="text-xs font-mono font-bold">
+                      <span className="text-yellow-500">{podium[0].total_score} pts</span>
+                      {podium[0].total_time_ms ? (
+                        <>
+                          <span className="text-white/15 mx-1">•</span>
+                          <span className="text-emerald-400">{(podium[0].total_time_ms / 1000).toFixed(2)}s</span>
+                        </>
+                      ) : null}
+                    </p>
                   </div>
                   <div className="w-full bg-yellow-400/20 border-t-4 border-yellow-400 rounded-t-lg h-48 flex flex-col items-center justify-center shadow-lg shadow-yellow-500/10">
                     <span className="text-5xl font-display font-black text-yellow-400">1</span>
@@ -467,7 +493,15 @@ export default function HostLiveControl() {
                 <div className="flex flex-col items-center w-28 md:w-36">
                   <div className="text-center mb-2">
                     <p className="font-black font-display text-xs truncate w-24 md:w-32">{podium[2].nickname}</p>
-                    <p className="text-xs text-amber-500 font-bold">{podium[2].total_score} pts</p>
+                    <p className="text-xs font-mono font-bold">
+                      <span className="text-amber-500">{podium[2].total_score} pts</span>
+                      {podium[2].total_time_ms ? (
+                        <>
+                          <span className="text-white/15 mx-1">•</span>
+                          <span className="text-emerald-400">{(podium[2].total_time_ms / 1000).toFixed(2)}s</span>
+                        </>
+                      ) : null}
+                    </p>
                   </div>
                   <div className="w-full bg-amber-600/20 border-t-4 border-amber-600 rounded-t-lg h-28 flex flex-col items-center justify-center shadow-lg">
                     <span className="text-3xl font-display font-black text-amber-600">3</span>

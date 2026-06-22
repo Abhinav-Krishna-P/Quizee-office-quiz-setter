@@ -27,6 +27,7 @@ export default function QuizSettings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [activeSession, setActiveSession] = useState(null); // { partyCode, status }
 
   // AI Import state
   const [pdfFile, setPdfFile] = useState(null);
@@ -103,6 +104,14 @@ export default function QuizSettings() {
         });
         const pubData = await pubRes.json();
         if (!pubRes.ok) {
+          if (pubRes.status === 409 || pubData.error === 'ActiveSessionExists') {
+            setActiveSession({
+              partyCode: pubData.partyCode,
+              status: pubData.status
+            });
+            setSaving(false);
+            return;
+          }
           throw new Error(pubData.error || 'Failed to publish quiz');
         }
         navigate(`/admin/lobby/${pubData.partyCode}`);
@@ -112,6 +121,42 @@ export default function QuizSettings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAbortAndPublish = async () => {
+    setSaving(true);
+    setError('');
+    setActiveSession(null);
+
+    try {
+      const pubRes = await fetch(`${API_BASE_URL}/quizzes/${id}/publish`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ abortActive: true })
+      });
+      const pubData = await pubRes.json();
+      if (!pubRes.ok) {
+        throw new Error(pubData.error || 'Failed to publish quiz');
+      }
+      navigate(`/admin/lobby/${pubData.partyCode}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleContinueSession = () => {
+    if (!activeSession) return;
+    if (activeSession.status === 'live') {
+      navigate(`/admin/host/${activeSession.partyCode.toUpperCase()}`);
+    } else {
+      navigate(`/admin/lobby/${activeSession.partyCode.toUpperCase()}`);
+    }
+    setActiveSession(null);
   };
 
   // Add a new question manually
@@ -671,6 +716,43 @@ export default function QuizSettings() {
                 className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold py-2 px-6 rounded-lg shadow-lg active:scale-[0.98] transition-all cursor-pointer"
               >
                 Accept and Add to Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Session Warning Modal */}
+      {activeSession && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-white/10 w-full max-w-md rounded-2xl overflow-hidden p-6 relative flex flex-col shadow-2xl">
+            <h3 className="text-xl font-display font-bold mb-3 flex items-center gap-2 text-violet-400">
+              <Users className="w-6 h-6 text-violet-400" /> Active Session Exists
+            </h3>
+            <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+              There is already an active session (Party Code: <span className="font-mono font-bold text-white select-all">{activeSession.partyCode}</span>) in progress for this quiz.
+              <br /><br />
+              Would you like to continue the existing session or abort it to start a new one?
+            </p>
+
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={handleContinueSession}
+                className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg active:scale-[0.98] transition-all cursor-pointer text-center"
+              >
+                Continue Existing Session
+              </button>
+              <button
+                onClick={handleAbortAndPublish}
+                className="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/20 text-red-400 font-bold py-2.5 px-4 rounded-lg active:scale-[0.98] transition-all cursor-pointer text-center"
+              >
+                Abort &amp; Start New Session
+              </button>
+              <button
+                onClick={() => setActiveSession(null)}
+                className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-semibold py-2.5 px-4 rounded-lg active:scale-[0.98] transition-all cursor-pointer text-center"
+              >
+                Cancel
               </button>
             </div>
           </div>

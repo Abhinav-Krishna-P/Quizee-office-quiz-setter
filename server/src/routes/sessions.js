@@ -2,7 +2,6 @@ import express from 'express';
 import { query } from '../db/index.js';
 import { requireAdmin } from './auth.js';
 import { getSession, createSessionStore, hasSession } from '../sockets/sessionStore.js';
-import { calculatePoints } from '../services/scoringService.js';
 
 const router = express.Router();
 
@@ -181,6 +180,62 @@ router.post('/:partyCode/join', async (req, res) => {
     });
   } catch (error) {
     console.error('Join session error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/sessions/:partyCode/leave - Participant leaves the session
+router.post('/:partyCode/leave', async (req, res) => {
+  const { partyCode } = req.params;
+  const { participantId } = req.body;
+  const upperCode = partyCode.toUpperCase();
+
+  if (!participantId) {
+    return res.status(400).json({ error: 'Participant ID is required' });
+  }
+
+  try {
+    const sessionRes = await query('SELECT id FROM sessions WHERE party_code = $1', [upperCode]);
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    const sessionId = sessionRes.rows[0].id;
+
+    const deleteRes = await query(
+      'DELETE FROM participants WHERE id = $1 AND session_id = $2 RETURNING *',
+      [participantId, sessionId]
+    );
+
+    if (deleteRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Participant not found in this session' });
+    }
+
+    const store = getSession(upperCode);
+    if (store) {
+      store.connectedParticipantIds.delete(parseInt(participantId, 10));
+      delete store.answersSubmitted[participantId];
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      const participantsRes = await query(
+        `SELECT p.id, p.nickname, p.avatar_color, t.name as team_name, t.color as team_color 
+         FROM participants p 
+         LEFT JOIN teams t ON p.team_id = t.id 
+         WHERE p.session_id = $1 
+         ORDER BY p.joined_at ASC`,
+        [sessionId]
+      );
+      
+      io.to(upperCode).emit('lobby-update', {
+        participants: participantsRes.rows,
+        participantCount: participantsRes.rows.length
+      });
+    }
+
+    res.json({ message: 'Left lobby successfully' });
+  } catch (error) {
+    console.error('Leave lobby error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -375,35 +430,39 @@ router.post('/:partyCode/next', requireAdmin, async (req, res) => {
       
       const submittedAnswers = store.answersSubmitted;
       
-      // We will update points in database
-      for (const [pIdStr, submission] of Object.entries(submittedAnswers)) {
-        const pId = parseInt(pIdStr, 10);
-        const isCorrect = submission.optionIndex === question.correct_index;
-        
-        // Calculate points
-        // Check current streak of participant
-        const streakRes = await query(
-          `SELECT COUNT(*) as streak FROM answers a
-           WHERE a.participant_id = $1 AND a.correct = true
-           AND a.id > COALESCE((SELECT MAX(id) FROM answers WHERE participant_id = $1 AND correct = false), 0)`,
-          [pId]
-        );
-        const streak = parseInt(streakRes.rows[0]?.streak || 0, 10);
-        
-        const { points } = calculatePoints(
-          isCorrect, 
-          submission.timeTakenMs, 
-          question.time_limit || settings.timerDefault || 20, 
-          streak, 
-          true // streak bonus enabled
-        );
+      // Map, filter correct ones, and sort by speed (timeTakenMs ascending) to determine top 3
+      const submissionsList = Object.entries(submittedAnswers).map(([pIdStr, sub]) => ({
+        pId: parseInt(pIdStr, 10),
+        optionIndex: sub.optionIndex,
+        timeTakenMs: sub.timeTakenMs,
+        isCorrect: sub.optionIndex === question.correct_index
+      }));
+
+      const correctSubmissions = submissionsList
+        .filter(sub => sub.isCorrect)
+        .sort((a, b) => a.timeTakenMs - b.timeTakenMs);
+
+      const pointsByParticipant = {};
+      correctSubmissions.forEach((sub, rankIndex) => {
+        let points = 5;
+        if (rankIndex === 0) points = 20;
+        else if (rankIndex === 1) points = 15;
+        else if (rankIndex === 2) points = 10;
+        pointsByParticipant[sub.pId] = points;
+      });
+
+      // Update points in database
+      for (const sub of submissionsList) {
+        const pId = sub.pId;
+        const isCorrect = sub.isCorrect;
+        const points = isCorrect ? (pointsByParticipant[pId] || 5) : 0;
 
         if (points > 0) {
           // Write to answers
           await query(
             `INSERT INTO answers (participant_id, question_id, option_index, time_taken_ms, correct, points_earned) 
              VALUES ($1, $2, $3, $4, true, $5)`,
-            [pId, question.id, submission.optionIndex, submission.timeTakenMs, points]
+            [pId, question.id, sub.optionIndex, sub.timeTakenMs, points]
           );
 
           // Update participant score
@@ -418,7 +477,7 @@ router.post('/:partyCode/next', requireAdmin, async (req, res) => {
           await query(
             `INSERT INTO answers (participant_id, question_id, option_index, time_taken_ms, correct, points_earned) 
              VALUES ($1, $2, $3, $4, false, 0)`,
-            [pId, question.id, submission.optionIndex, submission.timeTakenMs]
+            [pId, question.id, sub.optionIndex, sub.timeTakenMs]
           );
           participantPoints[pId] = 0;
         }
@@ -446,13 +505,16 @@ router.post('/:partyCode/next', requireAdmin, async (req, res) => {
       store.state = 'leaderboard';
 
       // Fetch top 5 participants
+      const currentQuestion = questions[currentQIdx];
       const topParticipants = await query(
-        `SELECT p.id, p.nickname, p.avatar_color, p.total_score, t.name as team_name 
+        `SELECT p.id, p.nickname, p.avatar_color, p.total_score, t.name as team_name,
+                a.time_taken_ms as total_time_ms
          FROM participants p
          LEFT JOIN teams t ON p.team_id = t.id
+         LEFT JOIN answers a ON a.participant_id = p.id AND a.question_id = $2 AND a.correct = true
          WHERE p.session_id = $1 
-         ORDER BY p.total_score DESC LIMIT 5`,
-        [session.id]
+         ORDER BY p.total_score DESC, a.time_taken_ms ASC NULLS LAST LIMIT 5`,
+        [session.id, currentQuestion.id]
       );
 
       // Fetch top teams if teamMode is active
@@ -520,13 +582,16 @@ router.post('/:partyCode/next', requireAdmin, async (req, res) => {
         );
 
         // Fetch podium results (top 3)
+        const lastQuestion = questions[currentQIdx];
         const podiumRes = await query(
-          `SELECT p.id, p.nickname, p.avatar_color, p.total_score, t.name as team_name
+          `SELECT p.id, p.nickname, p.avatar_color, p.total_score, t.name as team_name,
+                  a.time_taken_ms as total_time_ms
            FROM participants p
            LEFT JOIN teams t ON p.team_id = t.id
+           LEFT JOIN answers a ON a.participant_id = p.id AND a.question_id = $2 AND a.correct = true
            WHERE p.session_id = $1
-           ORDER BY p.total_score DESC LIMIT 3`,
-          [session.id]
+           ORDER BY p.total_score DESC, a.time_taken_ms ASC NULLS LAST LIMIT 3`,
+          [session.id, lastQuestion.id]
         );
 
         // Broadcast ended event
@@ -615,14 +680,22 @@ router.get('/:partyCode/results', async (req, res) => {
     const sessionId = sessionRes.rows[0].id;
     const quizId = sessionRes.rows[0].quiz_id;
 
+    const lastQuestionRes = await query(
+      'SELECT id FROM questions WHERE quiz_id = $1 ORDER BY position DESC LIMIT 1',
+      [quizId]
+    );
+    const lastQuestionId = lastQuestionRes.rows[0]?.id || null;
+
     // Get all participants sorted by score
     const participantsRes = await query(
-      `SELECT p.id, p.nickname, p.avatar_color, p.total_score, t.name as team_name, t.color as team_color
+      `SELECT p.id, p.nickname, p.avatar_color, p.total_score, t.name as team_name, t.color as team_color,
+              a.time_taken_ms as total_time_ms
        FROM participants p
        LEFT JOIN teams t ON p.team_id = t.id
+       LEFT JOIN answers a ON a.participant_id = p.id AND a.question_id = $2 AND a.correct = true
        WHERE p.session_id = $1
-       ORDER BY p.total_score DESC`,
-      [sessionId]
+       ORDER BY p.total_score DESC, a.time_taken_ms ASC NULLS LAST`,
+      [sessionId, lastQuestionId]
     );
 
     // Get team standings

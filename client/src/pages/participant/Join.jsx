@@ -30,6 +30,21 @@ export default function Join() {
     }
   }, [location]);
 
+  // Auto-cleanup previous session if landed back on Join page
+  useEffect(() => {
+    const prevParticipantId = sessionStorage.getItem('participantId');
+    const prevPartyCode = sessionStorage.getItem('partyCode');
+    if (prevParticipantId && prevPartyCode) {
+      fetch(`${API_BASE_URL}/sessions/${prevPartyCode}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId: prevParticipantId })
+      }).catch(err => console.error('Auto-cleanup on Join mount failed:', err));
+      
+      sessionStorage.clear();
+    }
+  }, []);
+
   const colorsList = [
     '#3B82F6', // Blue
     '#EF4444', // Red

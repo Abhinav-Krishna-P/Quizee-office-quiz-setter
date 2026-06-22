@@ -3,6 +3,7 @@ import multer from 'multer';
 import { query } from '../db/index.js';
 import { requireAdmin } from './auth.js';
 import { extractQuizFromPDF } from '../services/geminiService.js';
+import { getSession } from '../sockets/sessionStore.js';
 
 const router = express.Router();
 const upload = multer({ 
@@ -218,6 +219,52 @@ router.post('/:id/publish', requireAdmin, async (req, res) => {
     );
     if (parseInt(questionsCheck.rows[0].count, 10) === 0) {
       return res.status(400).json({ error: 'Quiz must have at least one question to publish.' });
+    }
+
+    // Check if an active session already exists for this quiz
+    const activeSessionRes = await query(
+      "SELECT id, party_code, status FROM sessions WHERE quiz_id = $1 AND status != 'ended'",
+      [id]
+    );
+    if (activeSessionRes.rows.length > 0) {
+      const { abortActive } = req.body || {};
+      if (abortActive) {
+        // Abort all active sessions for this quiz
+        for (const sess of activeSessionRes.rows) {
+          await query(
+            "UPDATE sessions SET status = 'ended' WHERE id = $1",
+            [sess.id]
+          );
+
+          // Clear in-memory session store
+          const upperCode = sess.party_code.toUpperCase();
+          const store = getSession(upperCode);
+          if (store) {
+            store.state = 'ended';
+          }
+
+          // Broadcast 'quiz-aborted'
+          const io = req.app.get('io');
+          if (io) {
+            io.to(upperCode).emit('quiz-aborted', {
+              message: 'Quiz ended by the admin'
+            });
+          }
+        }
+
+        // Also update quiz status to ended (so it can be re-published as active)
+        await query(
+          "UPDATE quizzes SET status = 'ended' WHERE id = $1",
+          [id]
+        );
+      } else {
+        return res.status(409).json({
+          error: 'ActiveSessionExists',
+          message: 'An active session for this quiz already exists.',
+          partyCode: activeSessionRes.rows[0].party_code,
+          status: activeSessionRes.rows[0].status
+        });
+      }
     }
 
     // 2. Generate a unique party code that is not currently active in sessions

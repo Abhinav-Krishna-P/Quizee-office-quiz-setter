@@ -138,6 +138,13 @@ export default function FinalResults() {
                   <CountUp to={selfStats.total_score} />
                 </span>
               </div>
+              <div className="w-px h-12 bg-white/5"></div>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1">Correct Time</span>
+                <span className="text-4xl font-mono font-black text-emerald-400 block">
+                  {selfStats.total_time_ms ? `${(selfStats.total_time_ms / 1000).toFixed(2)}s` : '-'}
+                </span>
+              </div>
             </div>
 
             <div className="text-xs text-slate-500 uppercase tracking-wider">
@@ -172,7 +179,15 @@ export default function FinalResults() {
                     </span>
                     <span className="font-bold truncate">{player.nickname}</span>
                   </div>
-                  <span className="font-mono font-bold text-violet-400">{player.total_score} pts</span>
+                  <div className="flex items-center gap-1.5 font-mono font-bold shrink-0">
+                    <span className="text-violet-400">{player.total_score} pts</span>
+                    {player.total_time_ms ? (
+                      <>
+                        <span className="text-white/10 text-[10px]">•</span>
+                        <span className="text-emerald-400">{(player.total_time_ms / 1000).toFixed(2)}s</span>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>

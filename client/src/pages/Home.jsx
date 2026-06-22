@@ -3,12 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { SpotlightCard, ShinyText, BlurText } from '../components/animations.jsx';
 import { QrCode, Play, LogIn, Camera, X } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import { API_BASE_URL } from '../config.js';
 
 export default function Home() {
   const [partyCode, setPartyCode] = useState('');
   const [error, setError] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const navigate = useNavigate();
+
+  // Auto-cleanup previous session if landed back on Home page
+  useEffect(() => {
+    const prevParticipantId = sessionStorage.getItem('participantId');
+    const prevPartyCode = sessionStorage.getItem('partyCode');
+    if (prevParticipantId && prevPartyCode) {
+      fetch(`${API_BASE_URL}/sessions/${prevPartyCode}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId: prevParticipantId })
+      }).catch(err => console.error('Auto-cleanup on Home mount failed:', err));
+      
+      sessionStorage.clear();
+    }
+  }, []);
 
   const handleJoin = (e) => {
     if (e) e.preventDefault();
