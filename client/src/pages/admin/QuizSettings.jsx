@@ -95,7 +95,7 @@ export default function QuizSettings() {
       }
 
       setSuccess('Quiz saved successfully!');
-      
+
       if (shouldPublish) {
         // Publish and launch lobby
         const pubRes = await fetch(`${API_BASE_URL}/quizzes/${id}/publish`, {
@@ -131,9 +131,9 @@ export default function QuizSettings() {
     try {
       const pubRes = await fetch(`${API_BASE_URL}/quizzes/${id}/publish`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ abortActive: true })
       });
@@ -184,7 +184,7 @@ export default function QuizSettings() {
     };
 
     setQuestions([...questions, newQ]);
-    
+
     // Clear form
     setNewQText('');
     setNewQOptions(['', '', '', '']);
@@ -294,7 +294,7 @@ export default function QuizSettings() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/5">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => navigate('/admin/quizzes')}
             className="p-2.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 transition-colors cursor-pointer"
           >
@@ -344,7 +344,7 @@ export default function QuizSettings() {
             <h3 className="text-lg font-display font-bold mb-4 flex items-center gap-2 pb-3 border-b border-white/5">
               <Users className="w-5 h-5 text-violet-400" /> General Settings
             </h3>
-            
+
             <div className="space-y-4">
               {/* Title */}
               <div>
@@ -367,6 +367,7 @@ export default function QuizSettings() {
                   className="w-full bg-slate-950/50 border border-white/10 rounded-lg py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all text-slate-100"
                 >
                   <option value={10}>10 seconds</option>
+                  <option value={15}>15 seconds</option>
                   <option value={20}>20 seconds</option>
                   <option value={30}>30 seconds</option>
                   <option value={60}>60 seconds</option>
@@ -512,7 +513,7 @@ export default function QuizSettings() {
                   const colors = ['border-red-500/30 focus:ring-red-500', 'border-blue-500/30 focus:ring-blue-500', 'border-yellow-500/30 focus:ring-yellow-500', 'border-emerald-500/30 focus:ring-emerald-500'];
                   const labelColors = ['text-red-400', 'text-blue-400', 'text-yellow-400', 'text-emerald-400'];
                   const labels = ['Red option (▲)', 'Blue option (◆)', 'Yellow option (●)', 'Green option (■)'];
-                  
+
                   return (
                     <div key={idx} className="space-y-1.5">
                       <div className="flex justify-between items-center">
@@ -583,8 +584,8 @@ export default function QuizSettings() {
             ) : (
               <div className="space-y-4">
                 {questions.map((q, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className="glass-panel rounded-xl p-5 border border-white/5 flex gap-4 items-start"
                   >
                     <span className="w-6 h-6 rounded-full bg-white/10 text-slate-200 text-xs font-bold flex items-center justify-center shrink-0">
@@ -593,12 +594,12 @@ export default function QuizSettings() {
 
                     <div className="flex-1 min-w-0">
                       <p className="text-slate-100 font-medium mb-3 leading-snug">{q.text || q.question}</p>
-                      
+
                       <div className="grid md:grid-cols-2 gap-2 text-xs text-slate-400">
                         {q.options.map((opt, oIdx) => {
                           const isCorrect = oIdx === q.correct_index;
-                          const bgClass = isCorrect 
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold' 
+                          const bgClass = isCorrect
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold'
                             : 'bg-black/20 border border-white/5';
                           return (
                             <div key={oIdx} className={`py-1.5 px-3 rounded-lg truncate ${bgClass}`}>
@@ -660,7 +661,7 @@ export default function QuizSettings() {
               {extractedQuestions.map((q, idx) => (
                 <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-3">
                   <div className="flex items-start gap-3">
-                    <span className="bg-pink-500/10 text-pink-400 font-bold px-2 py-0.5 rounded text-xs mt-0.5">Q{idx+1}</span>
+                    <span className="bg-pink-500/10 text-pink-400 font-bold px-2 py-0.5 rounded text-xs mt-0.5">Q{idx + 1}</span>
                     <input
                       type="text"
                       value={q.question || q.text}
