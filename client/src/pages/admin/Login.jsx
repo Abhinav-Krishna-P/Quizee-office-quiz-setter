@@ -130,7 +130,7 @@ export default function Login() {
         </form>
 
         <div className="mt-8 text-center text-xs text-slate-500 border-t border-white/5 pt-6">
-          <p>Default credentials: <code className="text-pink-400/80 bg-white/5 px-1.5 py-0.5 rounded">admin@officequiz.com</code> / <code className="text-pink-400/80 bg-white/5 px-1.5 py-0.5 rounded">admin123</code></p>
+          <p>Default credentials: <code className="text-pink-400/80 bg-white/5 px-1.5 py-0.5 rounded">admin@officequiz.com</code> / <code className="text-pink-400/80 bg-white/5 px-1.5 py-0.5 rounded">creator only knows</code></p>
         </div>
       </SpotlightCard>
     </div>

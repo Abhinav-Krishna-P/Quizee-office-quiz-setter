@@ -95,7 +95,7 @@ npm run install:all
    - `GEMINI_API_KEY`: Your Gemini Developer key from Google AI Studio.
    - `JWT_SECRET`: A secure key used for signing admin JWT logins.
 
-*Note: The database tables and a default administrator account (`admin@officequiz.com` / `admin123`) will be automatically initialized and seeded in the database upon launching the backend server.*
+*Note: The database tables and a default administrator account  will be automatically initialized and seeded in the database upon launching the backend server.*
 
 ---
 
