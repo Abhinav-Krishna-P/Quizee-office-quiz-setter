@@ -1,32 +1,19 @@
 version: '3.8'
 
 services:
-  # Database Service (named 'postgres' to match your DATABASE_URL host)
-  postgres:
-    image: postgres:15-alpine
-    container_name: officequiz-db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      # Interpolates POSTGRES_PASSWORD from your root .env, falling back to 'evo123456'
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-evo123456}
-      POSTGRES_DB: officequiz
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
   # Backend Server Service
   server:
     build: ./server
     container_name: officequiz-server
     restart: always
-    depends_on:
-      - postgres
     environment:
       # Interpolates connection details and secrets directly from your root .env file
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       PORT: ${PORT:-4000}
+    networks:
+      - evolution-network
 
   # Frontend Nginx Proxy Service
   client:
@@ -37,9 +24,12 @@ services:
     depends_on:
       - server
     ports:
-      # Expose Nginx proxy to HTTP port 80
+      # Expose Nginx proxy to HTTP port 80 (or change host port if 80 is occupied)
       - "80:80"
+    networks:
+      - evolution-network
 
-volumes:
-  pgdata:
-    driver: local
+networks:
+  evolution-network:
+    external: true
+    name: evolution-network

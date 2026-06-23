@@ -1,12 +1,18 @@
 # Office Quiz Arena 🎮
 
-A live, Kahoot-style quiz platform built for office team-building events and trivia tournaments. It supports up to 50 concurrent participants, real-time multiplayer gameplay synced via Socket.io, server-side speed-weighted scoring with streak bonuses, and AI-assisted quiz question generation from PDFs using the Google Gemini API.
+A live, Kahoot-style quiz platform built for office team-building events and trivia tournaments. It supports up to 50 concurrent participants, real-time multiplayer gameplay synced via Socket.io, server-side speed-ranked scoring with tie-breaker by correct answer speed, and AI-assisted quiz question generation from PDFs using the Google Gemini API.
 
 ## Features
 
 - **Double-Screen Layout**:
   - **Host View**: Projected display showing the room QR code, live answer count, countdown ring, per-question leaderboards, and a 3D-podium finish with confetti.
   - **Participant View**: Mobile-first interface with four big color-coded accessible shapes matching the projector screen.
+- **Speed-Ranked Scoring**: Points are distributed dynamically based on response speed:
+  - **1st Correct**: 20 pts
+  - **2nd Correct**: 15 pts
+  - **3rd Correct**: 10 pts
+  - **Others Correct**: 5 pts
+- **Tie-Breaking Rankings**: If players have the same total score, they are ranked based on the speed of their most recent correct answer. Leaderboards and podiums display points and times cleanly on a single line (`20 pts • 2.50s`).
 - **AI-Assisted Builder**: Upload any PDF document to parse and extract up to 30 multiple-choice trivia questions automatically using Google Gemini AI, which you can review and edit before publishing.
 - **Micro-Animations**: Shimmering text, fade-ins, and radial card spotlights inspired by **React Bits** powered by Framer Motion.
 - **Resilient Real-time Sync**: Synced countdown clocks using server timestamps to prevent client-side clock drifts, with automatic reconnection handling.
@@ -20,6 +26,7 @@ A live, Kahoot-style quiz platform built for office team-building events and tri
 | **Frontend** | React 18, Vite, Tailwind CSS v4, Framer Motion, HTML5-QRCode, Canvas-Confetti |
 | **Backend** | Node.js, Express, Socket.io, Multer |
 | **Database** | PostgreSQL (`pg` connection pool, auto-migration on start) |
+| **Containerization** | Docker, Docker Compose, Nginx |
 | **AI Integration** | Google Gemini API SDK (`@google/generative-ai`) |
 
 ---
@@ -37,7 +44,8 @@ office-quiz-arena/
 │   │   ├── socket/               # Socket.io Client Setup
 │   │   ├── App.jsx               # Routes Definition
 │   │   └── main.jsx
-│   └── package.json
+│   ├── Dockerfile
+│   └── nginx.conf
 ├── server/                       # Node.js + Express Backend
 │   ├── src/
 │   │   ├── db/                   # Database client & schema migration script
@@ -45,7 +53,9 @@ office-quiz-arena/
 │   │   ├── services/             # Scoring and Gemini API extractors
 │   │   ├── sockets/              # Socket.io connection handlers
 │   │   └── index.js              # Server entry point
-│   └── package.json
+│   └── Dockerfile
+├── docker-compose.yml            # Production Compose config
+├── self_hosting_guide.md         # Full VPS deployment guide
 ├── package.json                  # Root runner configurations
 └── README.md
 ```
@@ -57,10 +67,11 @@ office-quiz-arena/
 Make sure you have the following installed:
 - [Node.js](https://nodejs.org/) (v18 or higher recommended)
 - [PostgreSQL](https://www.postgresql.org/) (Service running locally or remotely)
+- *Or [Docker](https://www.docker.com/) for containerized deployment*
 
 ---
 
-## Setup Instructions
+## Setup Instructions (Local Development)
 
 ### 1. Clone the repository
 ```bash
@@ -88,7 +99,7 @@ npm run install:all
 
 ---
 
-## Running the Application
+## Running the Application (Local Development)
 
 In the root directory, start both the client and server concurrently:
 ```bash
@@ -97,3 +108,23 @@ npm run dev
 
 - **Frontend Client**: runs on [http://localhost:5173](http://localhost:5173)
 - **Backend API Server**: runs on [http://localhost:4000](http://localhost:4000)
+
+---
+
+## Docker & Self-Hosting (Production Deployment)
+
+The project is fully dockerized for hosting on a VPS. See [self_hosting_guide.md](self_hosting_guide.md) for full setup instructions.
+
+### Quick Start:
+1. Create a `.env` file in the root directory:
+   ```env
+   POSTGRES_PASSWORD=your_secure_db_password
+   JWT_SECRET=your_jwt_secret
+   GEMINI_API_KEY=your_gemini_api_key
+   ```
+2. Build and start the services:
+   ```bash
+   docker compose up -d --build
+   ```
+3. Open `http://your-server-ip/` in your browser.
+
