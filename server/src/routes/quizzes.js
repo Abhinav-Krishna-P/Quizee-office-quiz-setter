@@ -75,7 +75,7 @@ router.post('/', requireAdmin, async (req, res) => {
   }
 
   const defaultSettings = {
-    timerDefault: 20, // 20 seconds
+    timerDefault: 15, // 15 seconds
     teamMode: false,
     numTeams: 2,
     teamNames: ['Team Red', 'Team Blue'],

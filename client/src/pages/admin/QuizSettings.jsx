@@ -12,7 +12,7 @@ export default function QuizSettings() {
   // Quiz state
   const [title, setTitle] = useState('');
   const [settings, setSettings] = useState({
-    timerDefault: 20,
+    timerDefault: 15,
     teamMode: false,
     numTeams: 2,
     teamNames: ['Team Red', 'Team Blue'],
@@ -39,7 +39,7 @@ export default function QuizSettings() {
   const [newQText, setNewQText] = useState('');
   const [newQOptions, setNewQOptions] = useState(['', '', '', '']);
   const [newQCorrect, setNewQCorrect] = useState(0);
-  const [newQTimer, setNewQTimer] = useState(20);
+  const [newQTimer, setNewQTimer] = useState(15);
 
   // Fetch quiz details
   useEffect(() => {

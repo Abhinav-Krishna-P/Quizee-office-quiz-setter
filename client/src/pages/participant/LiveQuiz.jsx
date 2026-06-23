@@ -81,7 +81,7 @@ export default function LiveQuiz() {
           setGameState('question');
           setSelectedIdx(-1);
           selectedIdxRef.current = -1;
-          setTimeLimit(data.timeLimit || 20);
+          setTimeLimit(data.timeLimit || 15);
           syncTimer(data.questionStartedAt, data.timeLimit);
         }
       } else if (data.state === 'reveal') {
@@ -112,7 +112,7 @@ export default function LiveQuiz() {
       selectedIdxRef.current = -1;
       setError('');
       setCorrectIdx(-1);
-      setTimeLimit(data.timeLimit || 20);
+      setTimeLimit(data.timeLimit || 15);
 
       syncTimer(data.questionStartedAt, data.timeLimit);
     });

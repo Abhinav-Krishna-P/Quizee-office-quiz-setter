@@ -304,7 +304,7 @@ router.post('/:partyCode/start', requireAdmin, async (req, res) => {
         questionId: firstQuestion.id,
         text: firstQuestion.text,
         options: firstQuestion.options, // array of strings
-        timeLimit: firstQuestion.time_limit || session.settings.timerDefault || 20,
+        timeLimit: firstQuestion.time_limit || session.settings.timerDefault || 15,
         questionStartedAt: store.questionStartedAt,
         totalQuestions: questionsRes.rows.length
       });
@@ -561,7 +561,7 @@ router.post('/:partyCode/next', requireAdmin, async (req, res) => {
           questionId: nextQuestion.id,
           text: nextQuestion.text,
           options: nextQuestion.options,
-          timeLimit: nextQuestion.time_limit || settings.timerDefault || 20,
+          timeLimit: nextQuestion.time_limit || settings.timerDefault || 15,
           questionStartedAt: store.questionStartedAt,
           totalQuestions: questions.length
         });
