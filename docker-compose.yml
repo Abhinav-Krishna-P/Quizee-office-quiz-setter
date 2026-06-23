@@ -24,8 +24,8 @@ services:
     depends_on:
       - server
     ports:
-      # Expose Nginx proxy to HTTP port 80 (or change host port if 80 is occupied)
-      - "80:80"
+      # Expose Nginx proxy to HTTP port 8085 (since host port 80 is occupied)
+      - "8085:80"
     networks:
       - evolution-network
 

@@ -29,10 +29,10 @@ Before starting, make sure your VPS has the following installed:
     PORT=4000
 
     # PostgreSQL master password used by the database container
-    POSTGRES_PASSWORD=evo123456
+    POSTGRES_PASSWORD=db pass
 
     # Full database connection string (points to the 'postgres' container service)
-    DATABASE_URL=postgresql://postgres:evo123456@postgres:5432/officequiz
+    DATABASE_URL==yout  connection url
 
     # JWT secret used for admin sessions
     JWT_SECRET=your  secret
@@ -77,12 +77,12 @@ Docker Compose will:
 
 ## 🌐 Step 4: Accessing the Application
 
-By default, the application is exposed on port `80` (HTTP) of your VPS IP:
-* **Frontend**: `http://your-vps-ip/`
-* **API Health**: `http://your-vps-ip/health`
-* **WebSocket**: `http://your-vps-ip/socket.io/`
+By default, the application is exposed on port `8085` (HTTP) of your VPS IP:
+* **Frontend**: `http://your-vps-ip:8085/`
+* **API Health**: `http://your-vps-ip:8085/health`
+* **WebSocket**: `http://your-vps-ip:8085/socket.io/`
 
-You can log in to the admin panel at `http://your-vps-ip/` using:
+You can log in to the admin panel at `http://your-vps-ip:8085/` using:
 * **Email**: `admin@officequiz.com`
 * **Password**: `admin123` *(Be sure to change this password in the database/admin profile once logged in!)*
 
@@ -98,11 +98,11 @@ To run the application securely under a domain (e.g. `quiz.yourdomain.com`) with
    sudo apt install nginx certbot python3-certbot-nginx
    ```
 2. **Modify `docker-compose.yml`**:
-   Change the client ports mapping to run Nginx internally on port `8080` instead of `80`:
+   Change the client ports mapping to run Nginx internally on port `8085` instead of `80`:
    ```yaml
    client:
      ports:
-       - "127.0.0.1:8080:80"
+       - "127.0.0.1:8085:80"
    ```
 3. **Configure Nginx Site Configuration**:
    Create a server block `/etc/nginx/sites-available/quiz.conf`:
@@ -112,7 +112,7 @@ To run the application securely under a domain (e.g. `quiz.yourdomain.com`) with
        server_name quiz.yourdomain.com;
 
        location / {
-           proxy_pass http://127.0.0.1:8080;
+           proxy_pass http://127.0.0.1:8085;
            proxy_http_version 1.1;
            proxy_set_header Upgrade $http_upgrade;
            proxy_set_header Connection "upgrade";
