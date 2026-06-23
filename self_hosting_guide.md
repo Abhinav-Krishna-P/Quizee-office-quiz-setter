@@ -25,14 +25,20 @@ Before starting, make sure your VPS has the following installed:
    ```
 4. Paste the following configuration, replacing placeholder values with your secure secrets:
    ```env
-   # Database connection password (matches the one in docker-compose.yml)
-   POSTGRES_PASSWORD=change_me_to_a_strong_password
-   
-   # JWT secret used for admin sessions
-   JWT_SECRET=generate_a_long_random_hash_string_here
-   
-   # Your Google Gemini API Key for AI quiz generation
-   GEMINI_API_KEY=your_gemini_api_key_here
+    # Internal port for the backend server inside Docker container network
+    PORT=4000
+
+    # PostgreSQL master password used by the database container
+    POSTGRES_PASSWORD=evo123456
+
+    # Full database connection string (points to the 'postgres' container service)
+    DATABASE_URL=postgresql://postgres:evo123456@postgres:5432/officequiz
+
+    # JWT secret used for admin sessions
+    JWT_SECRET=your  secret
+
+    # Your Google Gemini API Key for AI quiz generation
+    GEMINI_API_KEY=your  api  key
    ```
 
 ---
@@ -46,9 +52,8 @@ docker compose up -d --build
 ```
 
 Docker Compose will:
-1. Start the PostgreSQL database container and persist its data in a Docker volume (`pgdata`).
-2. Build the Node.js backend server, connect it to the database, run schema initialization/seeding automatically.
-3. Build the React client app using Vite, compile static files, and launch Nginx to serve them on port `80`.
+1. Build the Node.js backend server, connect it to your existing PostgreSQL database container (running on `evolution-network`), and run schema initialization/seeding automatically.
+2. Build the React client app using Vite, compile static files, and launch Nginx to serve them on port `80`.
 
 ---
 
@@ -58,7 +63,7 @@ Docker Compose will:
    ```bash
    docker compose ps
    ```
-   You should see `officequiz-db`, `officequiz-server`, and `officequiz-client` running.
+   You should see `officequiz-server` and `officequiz-client` running.
 
 2. Check server logs to verify database connectivity and seeding:
    ```bash
